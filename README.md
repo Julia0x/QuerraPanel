@@ -1,6 +1,6 @@
 # QuerraPanel - Game Server Management Platform (Under Development)
 
-![PhoenixHost](https://camo.githubusercontent.com/f6ecddabe41e811c0992efcfbe5897c5feab845ba6d5b78160ad49d7ce902f28/68747470733a2f2f692e6962622e636f2f314776306862442f62643536356463633061353536616464306230613065643662323664363836652e676966)
+![QuerraPanel](https://camo.githubusercontent.com/f6ecddabe41e811c0992efcfbe5897c5feab845ba6d5b78160ad49d7ce902f28/68747470733a2f2f692e6962622e636f2f314776306862442f62643536356463633061353536616464306230613065643662323664363836652e676966)
 
 A powerful, real-time game server management platform with Discord integration, notifications, and announcements system.
 
@@ -24,8 +24,8 @@ A powerful, real-time game server management platform with Discord integration, 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/phoenixhost.git
-cd phoenixhost
+git clone https://github.com/Julia0x/QuerraPanel.git
+cd QuerraPanel
 ```
 
 2. Install dependencies:
@@ -46,6 +46,7 @@ DISCORD_CALLBACK_URL=http://localhost:3000/auth/discord/callback
 SESSION_SECRET=your_session_secret
 PTERODACTYL_API_URL=your_panel_url
 PTERODACTYL_API_KEY=your_api_key
+NAME=your_website_name
 ```
 
 4. Start the development server:
@@ -56,7 +57,7 @@ npm run dev
 ## 🏗️ Project Structure
 
 ```
-phoenixhost/
+QuerraPanel/
 ├── src/
 │   ├── index.js          # Application entry point
 │   ├── database.js       # Database operations
