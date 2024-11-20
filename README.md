@@ -1,4 +1,4 @@
-# PhoenixHost - Game Server Management Platform
+# QuerraPanel - Game Server Management Platform (Under Development)
 
 ![PhoenixHost](https://camo.githubusercontent.com/f6ecddabe41e811c0992efcfbe5897c5feab845ba6d5b78160ad49d7ce902f28/68747470733a2f2f692e6962622e636f2f314776306862442f62643536356463633061353536616464306230613065643662323664363836652e676966)
 
