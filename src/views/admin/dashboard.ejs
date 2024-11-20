@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - <%= process.env.NAME%></title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+  <nav class="bg-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex justify-between items-center h-16">
+        <div class="font-bold text-xl"><%= process.env.NAME%> Admin</div>
+        <a href="/admin/logout" class="text-gray-600 hover:text-gray-900">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto py-6 px-4">
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm">Total Users</p>
+            <h3 class="text-2xl font-bold"><%= stats.totalUsers %></h3>
+          </div>
+          <div class="bg-blue-100 p-3 rounded-full">
+            <i class="fas fa-users text-blue-500"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm">New Users (30d)</p>
+            <h3 class="text-2xl font-bold"><%= stats.newUsersThisMonth %></h3>
+          </div>
+          <div class="bg-green-100 p-3 rounded-full">
+            <i class="fas fa-user-plus text-green-500"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm">Active Notifications</p>
+            <h3 class="text-2xl font-bold"><%= stats.activeNotifications %></h3>
+          </div>
+          <div class="bg-yellow-100 p-3 rounded-full">
+            <i class="fas fa-bell text-yellow-500"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm">Announcements</p>
+            <h3 class="text-2xl font-bold"><%= stats.totalAnnouncements %></h3>
+          </div>
+          <div class="bg-purple-100 p-3 rounded-full">
+            <i class="fas fa-bullhorn text-purple-500"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-lg shadow-sm mb-6">
+      <div class="px-6 py-4 border-b">
+        <h2 class="text-xl font-semibold">Quick Actions</h2>
+      </div>
+      <div class="p-6">
+        <button 
+          onclick="openAnnouncementModal()"
+          class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 mr-4">
+          <i class="fas fa-bullhorn mr-2"></i>
+          Create Announcement
+        </button>
+        <button 
+          onclick="openBulkNotificationModal()"
+          class="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700">
+          <i class="fas fa-bell mr-2"></i>
+          Send Bulk Notification
+        </button>
+      </div>
+    </div>
+
+    <!-- User Management -->
+    <div class="bg-white rounded-lg shadow-sm">
+      <div class="px-6 py-4 border-b">
+        <h2 class="text-xl font-semibold">User Management</h2>
+      </div>
+      
+      <div class="p-6">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% users.forEach(user => { %>
+                <tr id="user-<%= user.id %>">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                      <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" alt="" class="h-8 w-8 rounded-full">
+                      <div class="ml-4">
+                        <div class="text-sm font-medium text-gray-900"><%= user.username %></div>
+                        <div class="text-sm text-gray-500">ID: <%= user.id %></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900"><%= user.email %></div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">
+                      <%= new Date(user.createdAt).toLocaleDateString() %>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button 
+                      onclick="sendNotification('<%= user.id %>')"
+                      class="text-indigo-600 hover:text-indigo-900 mr-4">
+                      <i class="fas fa-bell"></i>
+                    </button>
+                    <button 
+                      onclick="deleteUser('<%= user.id %>')"
+                      class="text-red-600 hover:text-red-900">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Announcements Section -->
+    <!-- Announcements Section -->
+    <div class="mt-6 bg-white rounded-lg shadow-sm">
+      <div class="px-6 py-4 border-b flex justify-between items-center">
+        <h2 class="text-xl font-semibold">Announcements</h2>
+        <button 
+          onclick="openAnnouncementModal()"
+          class="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 flex items-center">
+          <i class="fas fa-plus mr-2"></i>
+          New Announcement
+        </button>
+      </div>
+      <div class="p-6">
+        <div class="space-y-4" id="announcements-container">
+          <% announcements.reverse().forEach(announcement => { %>
+            <div class="border rounded-lg p-4 announcement announcement-<%= announcement.type %>" id="announcement-<%= announcement.id %>">
+              <div class="flex items-start justify-between">
+                <div class="flex-grow">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-lg font-semibold"><%= announcement.title %></h3>
+                    <div class="flex items-center space-x-2">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        <%= announcement.type === 'info' ? 'bg-blue-100 text-blue-800' :
+                           announcement.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                           announcement.type === 'error' ? 'bg-red-100 text-red-800' :
+                           'bg-green-100 text-green-800' %>">
+                        <%= announcement.type.charAt(0).toUpperCase() + announcement.type.slice(1) %>
+                      </span>
+                      <button 
+                        onclick="deleteAnnouncement('<%= announcement.id %>')"
+                        class="text-red-600 hover:text-red-800 transition-colors">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-gray-600 mb-2"><%= announcement.message %></p>
+                  <div class="text-sm text-gray-500 flex items-center">
+                    <i class="far fa-clock mr-1"></i>
+                    <%= new Date(announcement.timestamp).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Notification Modal -->
+  <div id="notificationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Send Notification</h3>
+        <div class="mt-2">
+          <textarea 
+            id="notificationMessage"
+            class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none"
+            rows="4"
+            placeholder="Enter your message here..."
+          ></textarea>
+        </div>
+        <div class="mt-4 flex justify-end">
+          <button
+            onclick="closeNotificationModal()"
+            class="mr-2 px-4 py-2 text-gray-500 rounded-md hover:bg-gray-100">
+            Cancel
+          </button>
+          <button
+            onclick="submitNotification()"
+            class="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800">
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Announcement Modal -->
+  <div id="announcementModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+      <div class="mt-3">
+        <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Create Announcement</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <input 
+              type="text"
+              id="announcementTitle"
+              class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Announcement title..."
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <textarea 
+              id="announcementMessage"
+              class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              rows="4"
+              placeholder="Announcement message..."
+            ></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <select 
+              id="announcementType"
+              class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="info">Info</option>
+              <option value="success">Success</option>
+              <option value="warning">Warning</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end space-x-2">
+          <button
+            onclick="closeAnnouncementModal()"
+            class="px-4 py-2 text-gray-500 rounded-md hover:bg-gray-100 transition-colors">
+            Cancel
+          </button>
+          <button
+            onclick="submitAnnouncement()"
+            class="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors">
+            Create
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedUserId = null;
+
+    function sendNotification(userId) {
+      selectedUserId = userId;
+      document.getElementById('notificationModal').classList.remove('hidden');
+    }
+
+    function closeNotificationModal() {
+      document.getElementById('notificationModal').classList.add('hidden');
+      document.getElementById('notificationMessage').value = '';
+      selectedUserId = null;
+    }
+
+    function openAnnouncementModal() {
+      document.getElementById('announcementModal').classList.remove('hidden');
+    }
+
+    function closeAnnouncementModal() {
+      document.getElementById('announcementModal').classList.add('hidden');
+      document.getElementById('announcementTitle').value = '';
+      document.getElementById('announcementMessage').value = '';
+      document.getElementById('announcementType').value = 'info';
+    }
+
+    async function submitNotification() {
+      const message = document.getElementById('notificationMessage').value;
+      if (!message) return;
+
+      try {
+        const response = await fetch('/admin/notifications/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: selectedUserId,
+            message
+          })
+        });
+
+        if (response.ok) {
+          alert('Notification sent successfully');
+          closeNotificationModal();
+        } else {
+          throw new Error('Failed to send notification');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to send notification');
+      }
+    }
+
+    async function submitAnnouncement() {
+      const title = document.getElementById('announcementTitle').value;
+      const message = document.getElementById('announcementMessage').value;
+      const type = document.getElementById('announcementType').value;
+
+      if (!title || !message) return;
+
+      try {
+        const response = await fetch('/admin/announcements', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title,
+            message,
+            type
+          })
+        });
+
+        if (response.ok) {
+          alert('Announcement created successfully');
+          closeAnnouncementModal();
+          location.reload();
+        } else {
+          throw new Error('Failed to create announcement');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to create announcement');
+      }
+    }
+
+    async function deleteUser(userId) {
+      if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/admin/users/${userId}/delete`, {
+          method: 'POST'
+        });
+
+        if (response.ok) {
+          document.getElementById(`user-${userId}`).remove();
+        } else {
+          throw new Error('Failed to delete user');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete user');
+      }
+    }
+
+     async function deleteAnnouncement(id) {
+      if (!confirm('Are you sure you want to delete this announcement?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/admin/announcements/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          const element = document.getElementById(`announcement-${id}`);
+          element.remove();
+          
+          // Update stats
+          const statsElement = document.querySelector('[data-stat="announcements"]');
+          if (statsElement) {
+            const currentCount = parseInt(statsElement.textContent);
+            statsElement.textContent = currentCount - 1;
+          }
+        } else {
+          throw new Error('Failed to delete announcement');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to delete announcement');
+      }
+    }
+
+  </script>
+</body>
+</html>
+
+
+
+
+
+

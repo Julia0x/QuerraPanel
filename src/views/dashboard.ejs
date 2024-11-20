@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Dashboard - <%= process.env.NAME%></title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f3e7ff 0%, #e7eeff 100%);
+      min-height: 100vh;
+    }
+    .gradient-text {
+      background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .stat-card {
+      transition: transform 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+    .notification-unread {
+      background-color: #f3f4f6;
+    }
+    .announcement {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .announcement:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    .announcement-info { border-left: 4px solid #3B82F6; }
+    .announcement-success { border-left: 4px solid #10B981; }
+    .announcement-warning { border-left: 4px solid #F59E0B; }
+    .announcement-error { border-left: 4px solid #EF4444; }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center">
+          <a href="/" class="text-2xl font-bold gradient-text"><%= process.env.NAME%></a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="relative">
+            <button 
+              onclick="toggleNotifications()"
+              class="text-gray-600 hover:text-gray-900 relative">
+              <i class="fas fa-bell"></i>
+              <% if (notifications.filter(n => !n.read).length > 0) { %>
+                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                  <%= notifications.filter(n => !n.read).length %>
+                </span>
+              <% } %>
+            </button>
+            <!-- Notifications Dropdown -->
+            <div id="notificationsDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50">
+              <div class="p-4 border-b">
+                <h3 class="text-lg font-semibold">Notifications</h3>
+              </div>
+              <div class="max-h-96 overflow-y-auto">
+                <% if (notifications.length === 0) { %>
+                  <div class="p-4 text-gray-500 text-center">No notifications</div>
+                <% } else { %>
+                  <% notifications.reverse().forEach(notification => { %>
+                    <div class="p-4 border-b <%= !notification.read ? 'notification-unread' : '' %>" id="notification-<%= notification.id %>">
+                      <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                          <p class="text-sm text-gray-800"><%= notification.message %></p>
+                          <p class="text-xs text-gray-500 mt-1">
+                            <%= new Date(notification.timestamp).toLocaleString() %>
+                          </p>
+                        </div>
+                        <% if (!notification.read) { %>
+                          <button 
+                            onclick="markAsRead('<%= notification.id %>')"
+                            class="text-xs text-indigo-600 hover:text-indigo-800">
+                            Mark as read
+                          </button>
+                        <% } %>
+                      </div>
+                    </div>
+                  <% }); %>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3">
+            <img 
+              src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" 
+              alt="Profile" 
+              class="w-8 h-8 rounded-full"
+            >
+            <span class="text-gray-700 font-medium"><%= user.username %></span>
+          </div>
+          <a href="/logout" class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto py-12 px-4">
+    <!-- Announcements Section (New) -->
+    <% if (announcements.length > 0) { %>
+      <div class="mb-8">
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b">
+            <h2 class="text-xl font-semibold flex items-center">
+              <i class="fas fa-bullhorn mr-2 text-purple-600"></i>
+              Announcements
+            </h2>
+          </div>
+          <div class="divide-y">
+            <% announcements.reverse().forEach(announcement => { %>
+              <div class="announcement p-4 bg-white announcement-<%= announcement.type %>">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="font-semibold text-lg mb-1"><%= announcement.title %></h3>
+                    <p class="text-gray-600"><%= announcement.message %></p>
+                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                      <i class="far fa-clock mr-1"></i>
+                      <%= new Date(announcement.timestamp).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) %>
+                    </div>
+                  </div>
+                  <span class="px-2 py-1 text-xs rounded-full
+                    <%= announcement.type === 'info' ? 'bg-blue-100 text-blue-800' :
+                       announcement.type === 'success' ? 'bg-green-100 text-green-800' :
+                       announcement.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                       'bg-red-100 text-red-800' %>">
+                    <%= announcement.type.charAt(0).toUpperCase() + announcement.type.slice(1) %>
+                  </span>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+  
+  <main class="max-w-7xl mx-auto py-12 px-4">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column -->
+      <div class="lg:col-span-2 space-y-8">
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white p-6 rounded-lg shadow-sm stat-card">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-gray-500">Account Status</div>
+              <i class="fas fa-user-shield text-green-500"></i>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">Active</div>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow-sm stat-card">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-gray-500">Security Level</div>
+              <i class="fas fa-shield-alt text-blue-500"></i>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">Standard</div>
+          </div>
+          <div class="bg-white p-6 rounded-lg shadow-sm stat-card">
+            <div class="flex items-center justify-between mb-4">
+              <div class="text-gray-500">Last Login</div>
+              <i class="fas fa-clock text-purple-500"></i>
+            </div>
+            <div class="text-lg font-bold text-gray-900">Just Now</div>
+          </div>
+        </div>
+
+        <!-- Account Information -->
+        <div class="bg-white rounded-lg shadow-sm">
+          <div class="border-b px-6 py-4">
+            <h2 class="text-lg font-semibold">Account Information</h2>
+          </div>
+          <div class="p-6">
+            <div class="flex items-center mb-8">
+              <img 
+                src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" 
+                alt="Profile" 
+                class="w-20 h-20 rounded-full mr-6"
+              >
+              <div>
+                <h3 class="text-xl font-medium mb-1"><%= user.username %></h3>
+                <p class="text-gray-600"><%= user.email %></p>
+                <div class="mt-2 flex items-center">
+                  <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Verified</span>
+                  <span class="ml-2 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Discord Linked</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Panel Email</label>
+                <div class="flex">
+                  <input 
+                    type="text" 
+                    value="<%= user.email %>" 
+                    readonly 
+                    class="flex-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm"
+                  >
+                  <button onclick="copyToClipboard(this.previousElementSibling)" class="ml-2 p-2 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Panel Password</label>
+                <div class="flex">
+                  <input 
+                    type="password" 
+                    value="<%= user.pterodactylPassword %>" 
+                    readonly 
+                    class="flex-1 block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm"
+                    id="passwordField"
+                  >
+                  <button onclick="togglePassword()" class="p-2 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button onclick="copyToClipboard(document.getElementById('passwordField'))" class="ml-2 p-2 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Account Created</label>
+                <input 
+                  type="text" 
+                  value="<%= new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>" 
+                  readonly 
+                  class="block w-full rounded-md border-gray-300 bg-gray-50 p-2 text-sm"
+                >
+              </div>
+
+              <div class="pt-4">
+                <a 
+                  href="<%= panelUrl %>" 
+                  target="_blank"
+                  class="block w-full text-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800"
+                >
+                  <i class="fas fa-external-link-alt mr-2"></i>
+                  Access Game Panel
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="space-y-8">
+        <!-- Security Center -->
+        <div class="bg-white rounded-lg shadow-sm">
+          <div class="border-b px-6 py-4">
+            <h2 class="text-lg font-semibold">Security Center</h2>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <i class="fas fa-shield-alt text-green-500 mr-3"></i>
+                  <span>Two-Factor Auth</span>
+                </div>
+                <button class="text-indigo-600 hover:text-indigo-800">Enable</button>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <i class="fas fa-key text-green-500 mr-3"></i>
+                  <span>Password Strength</span>
+                </div>
+                <span class="text-green-500">Strong</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <i class="fas fa-history text-blue-500 mr-3"></i>
+                  <span>Last Password Change</span>
+                </div>
+                <span class="text-gray-600">30 days ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div id="notifications" class="bg-white rounded-lg shadow-sm">
+          <div class="border-b px-6 py-4">
+            <h2 class="text-lg font-semibold">Recent Notifications</h2>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-bell text-blue-500"></i>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-900">Welcome to <%= process.env.NAME%>! Get started by exploring our features.</p>
+                  <p class="text-xs text-gray-500 mt-1">Just now</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-shield-alt text-green-500"></i>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-900">Your account security can be improved. Enable 2FA now.</p>
+                  <p class="text-xs text-gray-500 mt-1">5 minutes ago</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Support Section -->
+        <div class="bg-white rounded-lg shadow-sm">
+          <div class="border-b px-6 py-4">
+            <h2 class="text-lg font-semibold">Need Help?</h2>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              <a href="<%= process.env.DISCORD_SERVER_URL %>" target="_blank" 
+                class="flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                <i class="fab fa-discord mr-2"></i>
+                Join Discord Community
+              </a>
+              <a href="#" class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-book mr-2"></i>
+                Documentation
+              </a>
+              <a href="#" class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <i class="fas fa-question-circle mr-2"></i>
+                FAQ
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function copyToClipboard(element) {
+      element.select();
+      document.execCommand('copy');
+      element.blur();
+    }
+
+    function togglePassword() {
+      const passwordField = document.getElementById('passwordField');
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+      } else {
+        passwordField.type = 'password';
+      }
+    }
+  </script>
+  <!-- Rest of the dashboard content remains the same -->
+  
+  <script>
+    function toggleNotifications() {
+      const dropdown = document.getElementById('notificationsDropdown');
+      dropdown.classList.toggle('hidden');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('notificationsDropdown');
+      const bellIcon = event.target.closest('.fa-bell');
+      if (!bellIcon && !dropdown.contains(event.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    async function markAsRead(notificationId) {
+      try {
+        const response = await fetch(`/notifications/${notificationId}/read`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const notification = document.getElementById(`notification-${notificationId}`);
+          notification.classList.remove('notification-unread');
+          const markAsReadButton = notification.querySelector('button');
+          if (markAsReadButton) {
+            markAsReadButton.remove();
+          }
+
+          // Update notification counter
+          const unreadCount = document.querySelectorAll('.notification-unread').length;
+          const counterBadge = document.querySelector('.fa-bell + span');
+          if (unreadCount === 0 && counterBadge) {
+            counterBadge.remove();
+          } else if (counterBadge) {
+            counterBadge.textContent = unreadCount;
+          }
+        }
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+      }
+    }
+
+    function copyToClipboard(element) {
+      element.select();
+      document.execCommand('copy');
+      element.blur();
+    }
+
+    function togglePassword() {
+      const passwordField = document.getElementById('passwordField');
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+      } else {
+        passwordField.type = 'password';
+      }
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
