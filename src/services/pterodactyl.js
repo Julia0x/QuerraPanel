@@ -14,13 +14,13 @@ class PterodactylService {
     });
   }
 
-  async createUser({ email, username, firstName, lastName, password }) {
+  async createUser({ email, username, password }) {
     try {
       const response = await this.client.post('/api/application/users', {
         email,
         username,
-        first_name: firstName,
-        last_name: lastName,
+        first_name: username,
+        last_name: 'User',
         password,
         root_admin: false,
         language: 'en'
